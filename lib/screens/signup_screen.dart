@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_background.dart';
 import 'verify_identity_screen.dart';
+import 'signin_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -14,10 +16,81 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp() async {
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (username.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      _showError('Please fill in all fields.');
+      return;
+    }
+    if (password != confirmPassword) {
+      _showError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+      _showError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      await credential.user!.updateDisplayName(username);
+      await credential.user!.sendEmailVerification();
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerifyIdentityScreen(email: email),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Sign up failed. Please try again.';
+      if (e.code == 'email-already-in-use') {
+        message = 'An account already exists with this email.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (e.code == 'weak-password') {
+        message = 'Password is too weak.';
+      }
+      if (mounted) _showError(message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return AuthBackground(
+      showBackButton: true,
       child: Column(
         children: [
           const SizedBox(height: 24),
@@ -31,7 +104,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 32),
-
           _buildInputField(label: 'Username', controller: _usernameController),
           const SizedBox(height: 16),
           _buildInputField(
@@ -53,21 +125,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
             isObscure: true,
             isRequired: true,
           ),
-
           const SizedBox(height: 36),
           SizedBox(
             width: 140,
             height: 44,
             child: ElevatedButton(
-              onPressed: () {
-                // Navigate forward into your 6-digit verification code check screen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const VerifyIdentityScreen(),
-                  ),
-                );
-              },
+              onPressed: _isLoading ? null : _signUp,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF02B4D8),
                 foregroundColor: Colors.white,
@@ -76,9 +139,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Text(
-                'Sign up',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              child: Text(
+                _isLoading ? 'Creating...' : 'Sign up',
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -91,7 +155,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
               ),
               GestureDetector(
-                onTap: () => Navigator.maybePop(context),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SignInScreen()),
+                  );
+                },
                 child: const Text(
                   'Sign In',
                   style: TextStyle(
@@ -152,10 +221,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             obscureText: isObscure,
             style: const TextStyle(fontSize: 14),
             decoration: const InputDecoration(
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: InputBorder.none,
             ),
           ),

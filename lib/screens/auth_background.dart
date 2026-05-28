@@ -24,8 +24,6 @@ class AuthBackground extends StatelessWidget {
             right: -50,
             child: CircleAvatar(radius: 90, backgroundColor: Color(0xFF02B4D8)),
           ),
-          // Top Left Floating Circles
-          // Top Left Floating Circles
           Positioned(
             top: 140,
             left: -20,
@@ -42,7 +40,6 @@ class AuthBackground extends StatelessWidget {
               backgroundColor: const Color(0xFF02B4D8).withOpacity(0.9),
             ),
           ),
-          // Middle Right Floating Circle
           Positioned(
             top: 240,
             right: 40,
@@ -52,11 +49,37 @@ class AuthBackground extends StatelessWidget {
             ),
           ),
 
-          // Custom Capsule Back Button
-          // Custom Capsule Back Button
+          // Main Screen Content Box — sits above circles
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 40),
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          'assets/images/unisnack_logo.png',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    child,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Back button LAST in the stack so it's always on top
           if (showBackButton)
             Positioned(
-              top: 50,
+              top: MediaQuery.of(context).padding.top + 12,
               left: 20,
               child: InkWell(
                 onTap: onBackPress ?? () => Navigator.maybePop(context),
@@ -67,8 +90,15 @@ class AuthBackground extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xEAEAEAFF).withOpacity(0.7),
+                    color: Colors.white.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -88,34 +118,6 @@ class AuthBackground extends StatelessWidget {
                 ),
               ),
             ),
-
-          // Main Screen Content Box
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
-                    // Perfectly Centered Rounded App Logo
-                    Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.asset(
-                          'assets/images/unisnack_logo.png',
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    child,
-                  ],
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );

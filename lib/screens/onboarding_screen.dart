@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/onboarding_service.dart';
 import 'signin_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -31,7 +32,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
   ];
 
-  void _goToSignIn() {
+  void _goToSignIn() async {
+    // Mark onboarding as seen
+    await OnboardingService().setOnboardingSeen();
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SignInScreen()),
